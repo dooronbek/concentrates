@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm install *)",
+      "PowerShell(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -sS http://localhost:5173/)",
+      "Bash(curl -sS http://localhost:5173/src/App.jsx)",
+      "Bash(curl -sS -o /dev/null -w \"main: HTTP %{http_code}\\\\n\" http://localhost:5173/src/main.jsx)",
+      "Bash(curl -sS -o /dev/null -w \"Login: HTTP %{http_code}\\\\n\" http://localhost:5173/src/pages/Login.jsx)",
+      "Bash(curl -sS -o /dev/null -w \"Dashboard: HTTP %{http_code}\\\\n\" http://localhost:5173/src/pages/Dashboard.jsx)",
+      "Bash(curl -sS -o /dev/null -w \"Production: HTTP %{http_code}\\\\n\" http://localhost:5173/src/pages/Production.jsx)",
+      "Bash(curl -sS -o /dev/null -w \"Sidebar: HTTP %{http_code}\\\\n\" http://localhost:5173/src/components/Sidebar.jsx)",
+      "Bash(curl -sS -o /dev/null -w \"Layout: HTTP %{http_code}\\\\n\" http://localhost:5173/src/components/Layout.jsx)",
+      "Bash(curl -sS -o /dev/null -w \"AuthCtx: HTTP %{http_code}\\\\n\" http://localhost:5173/src/auth/AuthContext.jsx)",
+      "Bash(curl -sS -o /dev/null -w \"JWT: HTTP %{http_code}\\\\n\" http://localhost:5173/src/auth/jwt.js)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(curl -sS -o /dev/null -w \"/: HTTP %{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -sS -o /dev/null -w \"db.js: HTTP %{http_code}\\\\n\" http://localhost:5173/src/api/db.js)",
+      "Bash(curl -sS -o /dev/null -w \"supabaseApi: HTTP %{http_code}\\\\n\" http://localhost:5173/src/api/supabaseApi.js)",
+      "Bash(curl -sS -o /dev/null -w \"mockApi: HTTP %{http_code}\\\\n\" http://localhost:5173/src/api/mockApi.js)",
+      "Bash(curl -sS http://localhost:5173/src/api/db.js)",
+      "Bash(npm test *)"
+    ]
+  }
+}
