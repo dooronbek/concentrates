@@ -181,6 +181,38 @@ export async function mockBackend(path, options = {}) {
         return db.ingredients[idx];
       }
       if (method === 'DELETE') {
+        // Mirror the SQL BEFORE DELETE trigger from migration 0003 — block
+        // deletion if the ingredient is referenced anywhere, with a Russian
+        // error listing the categories of usage.
+        const ing = db.ingredients[idx];
+        const inBaseRecipes = db.concentrate_types.some((ct) =>
+          (ct.base_composition || []).some((c) => c.ingredient_id === ing.id)
+        );
+        const inVariants = db.recipe_variants.some((rv) => {
+          const o = rv.overrides || {};
+          return (
+            (o.add || []).some((c) => c.ingredient_id === ing.id) ||
+            (o.modify || []).some((c) => c.ingredient_id === ing.id) ||
+            (o.remove || []).includes(ing.id)
+          );
+        });
+        const inBatches = db.batches.some(
+          (b) =>
+            (b.ingredients_used || []).some((u) => u.ingredient_id === ing.id) ||
+            (b.actual_ingredients_used || []).some(
+              (u) => u.ingredient_id === ing.id
+            )
+        );
+        const parts = [];
+        if (inBaseRecipes) parts.push('базовых рецептах');
+        if (inVariants) parts.push('вариантах рецептов');
+        if (inBatches) parts.push('исторических партиях');
+        if (parts.length > 0) {
+          fail(
+            `Ингредиент "${ing.name_ru}" используется в ${parts.join(', ')} — нельзя удалить`,
+            409
+          );
+        }
         const removed = db.ingredients.splice(idx, 1)[0];
         saveDb(db);
         return removed;
@@ -203,8 +235,26 @@ export async function mockBackend(path, options = {}) {
     if (!id) {
       if (method === 'GET') return [...db.flavors];
       if (method === 'POST') {
-        const item = { ...body, created_at: nowIso(), updated_at: nowIso() };
+        const item = { active: true, notes: '', ...body, created_at: nowIso(), updated_at: nowIso() };
         db.flavors.push(item);
+        // Mirror the SQL AFTER INSERT trigger from migration 0003 — auto-
+        // create empty recipe_variants for every flavor-specific concentrate
+        // type so the operator can fill in overrides without a second click.
+        for (const ct of db.concentrate_types) {
+          if (!ct.is_flavor_specific) continue;
+          const variantId = `${ct.id}__${item.id}`;
+          if (db.recipe_variants.some((rv) => rv.id === variantId)) continue;
+          db.recipe_variants.push({
+            id: variantId,
+            concentrate_type_id: ct.id,
+            flavor_id: item.id,
+            overrides: { add: [], modify: [], remove: [] },
+            protocol_addendum: [],
+            notes: '',
+            created_at: nowIso(),
+            updated_at: nowIso(),
+          });
+        }
         saveDb(db);
         return item;
       }

@@ -7,6 +7,7 @@ import {
   Clock,
   Package,
   PackageX,
+  Play,
   Plus,
 } from 'lucide-react';
 import { t } from '../i18n/index.js';
@@ -21,12 +22,18 @@ import { expiryStatus, stockStatus } from '../lib/status.js';
 import { formatAmountUnit, formatRelativeDay } from '../lib/format.js';
 import { plural, FORMS } from '../lib/pluralize.js';
 import { cn } from '../lib/utils.js';
+import { clearShift, loadShift } from '../lib/shiftPersistence.js';
 import PageHeader from '../components/PageHeader.jsx';
 import Badge from '../components/Badge.jsx';
 import { PageError, PageLoading } from '../components/StateView.jsx';
+import { PrimaryButton, SecondaryButton } from '../components/FormField.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 export default function Dashboard() {
   const [data, setData] = useState({ status: 'loading' });
+  const [activeShift, setActiveShift] = useState(() => loadShift());
+  const [confirmCancelShift, setConfirmCancelShift] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -69,13 +76,64 @@ export default function Dashboard() {
   const warningDays = data.settings.expiry_warning_days || 30;
   const activeFlavors = data.flavors.filter((f) => f.active);
 
+  function handleCancelShift() {
+    clearShift();
+    setActiveShift(null);
+    setConfirmCancelShift(false);
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader title={t('dashboard.title')} />
+
+      {activeShift && (
+        <ShiftResumeBanner
+          shift={activeShift}
+          onResume={() => navigate('/shift')}
+          onCancel={() => setConfirmCancelShift(true)}
+        />
+      )}
+
       <AlertsSection ingredients={data.ingredients} warningDays={warningDays} />
       <QuickActions types={data.types} flavors={activeFlavors} />
       <RecentBatches batches={data.batches} />
+
+      <ConfirmDialog
+        open={confirmCancelShift}
+        title={t('shift.exitConfirmTitle')}
+        description={t('shift.exitConfirmDescription')}
+        destructive
+        confirmLabel={t('dashboard.cancelShift')}
+        onConfirm={handleCancelShift}
+        onCancel={() => setConfirmCancelShift(false)}
+      />
     </div>
+  );
+}
+
+function ShiftResumeBanner({ shift, onResume, onCancel }) {
+  const count = shift.planned?.length ?? 0;
+  return (
+    <section className="flex flex-wrap items-center gap-3 rounded-lg border border-warning/30 bg-warning/5 p-4">
+      <AlertTriangle size={20} className="shrink-0 text-warning" />
+      <div className="flex-1">
+        <div className="text-sm font-medium text-warning">
+          {t('dashboard.resumeShift')}
+        </div>
+        <div className="mt-0.5 text-xs text-warning/80">
+          {plural(count, FORMS.batches)} · {t('dashboard.resumeShiftDescription')}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <SecondaryButton onClick={onCancel} className="text-destructive">
+          {t('dashboard.cancelShift')}
+        </SecondaryButton>
+        <PrimaryButton onClick={onResume}>
+          <Play size={14} />
+          {t('dashboard.resume')}
+        </PrimaryButton>
+      </div>
+    </section>
   );
 }
 
@@ -138,7 +196,6 @@ function AlertsSection({ ingredients, warningDays }) {
             }))}
           />
         )}
-
         {lowStock.length > 0 && (
           <AlertCard
             tone="danger"
@@ -153,7 +210,6 @@ function AlertsSection({ ingredients, warningDays }) {
             }))}
           />
         )}
-
         {expiring.length > 0 && (
           <AlertCard
             tone="warning"
@@ -217,7 +273,6 @@ function QuickActions({ types, flavors }) {
 
   function handleType(type) {
     if (!type.is_flavor_specific) {
-      // Concentrate B: no flavor required, ignore selection.
       navigate(`/production?type=${type.id}`);
       return;
     }
@@ -231,13 +286,19 @@ function QuickActions({ types, flavors }) {
 
   return (
     <section className="space-y-3">
-      <div>
-        <h2 className="text-base font-semibold tracking-tight">
-          {t('dashboard.quickAction')}
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {t('dashboard.quickActionDescription')}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold tracking-tight">
+            {t('dashboard.quickAction')}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t('dashboard.quickActionDescription')}
+          </p>
+        </div>
+        <PrimaryButton onClick={() => navigate('/shift')}>
+          <Play size={14} />
+          {t('dashboard.startShift')}
+        </PrimaryButton>
       </div>
 
       {flavors.length > 0 && (
@@ -355,6 +416,9 @@ function RecentBatches({ batches }) {
                 </div>
                 <div className="truncate text-xs text-muted-foreground">
                   {formatRelativeDay(batch.produced_at)} · {batch.produced_by}
+                  {batch.shift_id && (
+                    <span className="ml-2 font-mono text-[10px]">{batch.shift_id}</span>
+                  )}
                 </div>
               </div>
               <div className="hidden font-mono text-xs text-muted-foreground sm:block">

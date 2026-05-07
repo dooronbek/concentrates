@@ -19,3 +19,4 @@ service-account*.json
 credentials*.json
 .env*
 !.env.example
+.vercel

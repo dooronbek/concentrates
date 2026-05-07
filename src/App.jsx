@@ -6,6 +6,7 @@ import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Warehouse from './pages/Warehouse.jsx';
 import Production from './pages/Production.jsx';
+import Shift from './pages/Shift.jsx';
 import BatchJournal from './pages/BatchJournal.jsx';
 import Recipes from './pages/Recipes.jsx';
 import Settings from './pages/Settings.jsx';
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/warehouse" element={<Warehouse />} />
           <Route path="/production" element={<Production />} />
+          <Route path="/shift" element={<Shift />} />
           <Route path="/journal" element={<BatchJournal />} />
           <Route path="/recipes" element={<Recipes />} />
           <Route path="/settings" element={<Settings />} />

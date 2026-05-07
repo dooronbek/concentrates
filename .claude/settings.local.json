@@ -22,7 +22,8 @@
       "Bash(curl -sS -o /dev/null -w \"supabaseApi: HTTP %{http_code}\\\\n\" http://localhost:5173/src/api/supabaseApi.js)",
       "Bash(curl -sS -o /dev/null -w \"mockApi: HTTP %{http_code}\\\\n\" http://localhost:5173/src/api/mockApi.js)",
       "Bash(curl -sS http://localhost:5173/src/api/db.js)",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(grep -c \"supabase\\\\\\\\\\\\\\\\\\\\\\\\.co\" dist/sw.js)"
     ]
   }
 }
